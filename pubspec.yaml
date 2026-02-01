@@ -1,0 +1,17 @@
+name: air_cli
+description: A command-line interface for the Air Framework.
+version: 0.0.2
+repository: https://github.com/your_username/air_cli
+environment:
+  sdk: ^3.10.7
+
+executables:
+  air: air
+
+dependencies:
+  args: ^2.4.0
+  path: ^1.8.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0

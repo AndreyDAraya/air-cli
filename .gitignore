@@ -1,0 +1,16 @@
+# Files and folders created by pub
+.dart_tool/
+.packages
+pubspec.lock
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Build files
+build/
+my_app/
+test_blank_app/
