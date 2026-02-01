@@ -125,24 +125,8 @@ ${Console.cyan}Project structure:${Console.reset}
         runInShell: true,
       );
     } else {
-      // Default to path for this specific environment (User request legacy support)
-      // TODO: Switch to hosted version for production
-      // 'air_framework:^1.0.0'
-      const defaultPath =
-          '/Users/andreydaraya/Desktop/flutter-modules-installer';
-      if (Directory(defaultPath).existsSync()) {
-        await Process.run(
-          'flutter',
-          ['pub', 'add', 'air_framework', '--path', defaultPath],
-          workingDirectory: projectName,
-          runInShell: true,
-        );
-      } else {
-        Console.warning(
-          'Air Framework local path not found. Adding as standard dependency.',
-        );
-        dependencies.add('air_framework');
-      }
+      // Default to hosted version for production
+      dependencies.add('air_framework:^1.0.0');
     }
 
     if (dependencies.isNotEmpty) {

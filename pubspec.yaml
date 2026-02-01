@@ -1,7 +1,7 @@
 name: air_cli
-description: A command-line interface for the Air Framework.
-version: 0.0.2
-repository: https://github.com/your_username/air_cli
+description: The official CLI for the Air Framework. Streamline your Flutter development with modular architecture, automated code generation, and scalable state management.
+version: 1.0.0
+repository: https://github.com/AndreyDAraya/air-cli
 environment:
   sdk: ^3.10.7
 
