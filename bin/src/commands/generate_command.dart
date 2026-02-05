@@ -78,7 +78,7 @@ Types:
   module, m     Generate a new module (--all for full structure)
   screen, page, view, s, p, v  Generate a new screen (--module=<module>)
   service, svc  Generate a new service (--module=<module>)
-  state, st     Generate a new AirState controller (--module=<module>)
+  state, st     Generate a new AirState controller (--module=<module> [--generator])
   model, mod    Generate a new model (--module=<module> | --core)
   widget, w     Generate a new widget (--module=<module>)
 

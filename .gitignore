@@ -14,3 +14,4 @@ pubspec.lock
 build/
 my_app/
 test_blank_app/
+.DS_Store

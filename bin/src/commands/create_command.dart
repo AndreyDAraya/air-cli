@@ -110,6 +110,7 @@ ${Console.cyan}Project structure:${Console.reset}
       'file_picker:^8.3.7',
       'path_provider:^2.1.5',
       'path:^1.9.1',
+      'go_router:^17.0.1',
     ];
 
     // Air Framework dependency

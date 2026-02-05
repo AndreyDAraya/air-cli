@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- **Reactive State Generation**: Added support for `@GenerateState` annotation with the `--generator` flag.
+- **API Changes**: Updated `AppModule` interface: `onBind()` -> `onBind(AirDI di)` and `initialize()` -> `onInit(AirDI di)`.
+- **Improvements**: Updated templates and generators to match the latest `air_framework` changes.
+
 ## 1.0.0
 
 - Initial release of the Air CLI.

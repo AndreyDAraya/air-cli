@@ -16,6 +16,7 @@ class ModuleGenerator extends BaseGenerator {
 
     // Parse --all flag
     bool createAll = args.contains('--all');
+    bool useGenerator = args.contains('--generator');
 
     Console.header('Generating Module: $pascalName');
 
@@ -30,7 +31,7 @@ class ModuleGenerator extends BaseGenerator {
     // 1. Create module definition
     await FileUtils.createFile(
       path.join(modulePath, '${snakeName}_module.dart'),
-      _moduleFile(snakeName, pascalName, createAll),
+      _moduleFile(snakeName, pascalName, createAll, useGenerator),
     );
     Console.success('Created ${snakeName}_module.dart');
 
@@ -45,20 +46,29 @@ class ModuleGenerator extends BaseGenerator {
       // 3. Create Air State (Architecture)
       final statePath = path.join(modulePath, 'ui', 'state');
 
-      await FileUtils.createFile(
-        path.join(statePath, '${snakeName}_state.dart'),
-        _stateFile(snakeName, pascalName),
-      );
-      await FileUtils.createFile(
-        path.join(statePath, '${snakeName}_pulses.dart'),
-        _pulsesFile(snakeName, pascalName),
-      );
-      await FileUtils.createFile(
-        path.join(statePath, '${snakeName}_flows.dart'),
-        _flowsFile(snakeName, pascalName),
-      );
+      if (useGenerator) {
+        await FileUtils.createFile(
+          path.join(statePath, '${snakeName}_state.dart'),
+          _generatorStateFile(snakeName, pascalName, snakeName),
+        );
+      } else {
+        await FileUtils.createFile(
+          path.join(statePath, '${snakeName}_state.dart'),
+          _stateFile(snakeName, pascalName),
+        );
+        await FileUtils.createFile(
+          path.join(statePath, '${snakeName}_pulses.dart'),
+          _pulsesFile(snakeName, pascalName),
+        );
+        await FileUtils.createFile(
+          path.join(statePath, '${snakeName}_flows.dart'),
+          _flowsFile(snakeName, pascalName),
+        );
+      }
       Console.success(
-        'Created ui/state/ (${snakeName}_state.dart, ${snakeName}_pulses.dart, ${snakeName}_flows.dart)',
+        useGenerator
+            ? 'Created ui/state/${snakeName}_state.dart'
+            : 'Created ui/state/ (${snakeName}_state.dart, ${snakeName}_pulses.dart, ${snakeName}_flows.dart)',
       );
 
       // 4. Create Service
@@ -79,10 +89,15 @@ class ModuleGenerator extends BaseGenerator {
     print('');
     Console.success('Module "$pascalName" created with Air Framework!');
 
-    _printNextSteps(snakeName, pascalName, createAll);
+    _printNextSteps(snakeName, pascalName, createAll, useGenerator);
   }
 
-  void _printNextSteps(String snakeName, String pascalName, bool createAll) {
+  void _printNextSteps(
+    String snakeName,
+    String pascalName,
+    bool createAll,
+    bool useGenerator,
+  ) {
     print('''
 
 ${Console.cyan}Next steps:${Console.reset}
@@ -95,6 +110,13 @@ ${Console.cyan}Next steps:${Console.reset}
   2. Inject your State in the Page:
      ${Console.green}final state = AirDI().get<${pascalName}State>();${Console.reset}
 ''');
+
+      if (useGenerator) {
+        print('''
+  3. Run build_runner to generate the reactive code:
+     ${Console.green}dart run build_runner build${Console.reset}
+''');
+      }
     }
 
     print('''
@@ -107,18 +129,62 @@ ${Console.cyan}Air Module structure:${Console.reset}
 ''');
 
     if (createAll) {
-      print('''
+      if (useGenerator) {
+        print('''
+  │   └── state/
+  │       └── ${snakeName}_state.dart
+''');
+      } else {
+        print('''
   │   └── state/
   │       ├── ${snakeName}_state.dart
   │       ├── ${snakeName}_pulses.dart
   │       └── ${snakeName}_flows.dart
+''');
+      }
+      print('''
   ├── services/
   └── models/
 ''');
     }
   }
 
-  String _moduleFile(String snakeName, String pascalName, bool createAll) {
+  String _generatorStateFile(
+    String snakeName,
+    String pascalName,
+    String moduleSnake,
+  ) =>
+      '''
+// ignore_for_file: unused_field
+import 'package:air_framework/air_framework.dart';
+
+part '${snakeName}_state.air.g.dart';
+
+@GenerateState('$moduleSnake')
+class ${pascalName}State extends _${pascalName}State {
+  // Private fields → automatically become StateFlows
+  final bool _isLoading = false;
+  final int _count = 0;
+
+  // Public void methods → automatically become Pulses
+  @override
+  void increment() {
+    count = count + 1;
+  }
+
+  @override
+  void decrement() {
+    count = count - 1;
+  }
+}
+''';
+
+  String _moduleFile(
+    String snakeName,
+    String pascalName,
+    bool createAll,
+    bool useGenerator,
+  ) {
     if (createAll) {
       return '''
 import 'package:flutter/material.dart';
@@ -146,15 +212,15 @@ class ${pascalName}Module implements AppModule {
   String get initialRoute => '/$snakeName';
   
   @override
-  void onBind() {
+  void onBind(AirDI di) {
     // Register dependencies in DI container
-    AirDI().registerLazySingleton<${pascalName}State>(() => ${pascalName}State());
+    di.registerLazySingleton<${pascalName}State>(() => ${pascalName}State());
   }
 
   @override
-  Future<void> initialize() async {
+  Future<void> onInit(AirDI di) async {
     // Initialize state controller
-    AirDI().get<${pascalName}State>();
+    di.get<${pascalName}State>();
   }
 
   @override
@@ -192,10 +258,10 @@ class ${pascalName}Module implements AppModule {
   String get initialRoute => '/$snakeName';
   
   @override
-  void onBind() {}
+  void onBind(AirDI di) {}
 
   @override
-  Future<void> initialize() async {}
+  Future<void> onInit(AirDI di) async {}
 
   @override
   List<AirRoute> get routes => [

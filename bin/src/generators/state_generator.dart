@@ -33,25 +33,46 @@ class StateGenerator extends BaseGenerator {
       stateDir.createSync(recursive: true);
     }
 
+    final useGenerator = args.contains('--generator');
     final stateFile = path.join(statePath, '${snakeName}_state.dart');
 
     checkFileExists(stateFile);
 
-    await FileUtils.createFile(
-      stateFile,
-      _stateFile(snakeName, pascalName, moduleSnake),
-    );
-    await FileUtils.createFile(
-      path.join(statePath, '${snakeName}_pulses.dart'),
-      _pulsesFile(snakeName, pascalName),
-    );
-    await FileUtils.createFile(
-      path.join(statePath, '${snakeName}_flows.dart'),
-      _flowsFile(snakeName, pascalName),
-    );
+    if (useGenerator) {
+      await FileUtils.createFile(
+        stateFile,
+        _generatorStateFile(snakeName, pascalName, moduleSnake),
+      );
 
-    Console.success('Created AirState architecture in $moduleSnake/ui/state/');
-    print('''
+      Console.success('Created Reactive AirState in $moduleSnake/ui/state/');
+      print('''
+${Console.blue}File created:${Console.reset}
+  - ${snakeName}_state.dart
+
+${Console.blue}Next steps:${Console.reset}
+  1. Boot the state in ${moduleSnake}_module.dart:
+     ${Console.green}${pascalName}State();${Console.reset}
+  2. Run build_runner to generate the reactive code:
+     ${Console.green}dart run build_runner build${Console.reset}
+''');
+    } else {
+      await FileUtils.createFile(
+        stateFile,
+        _stateFile(snakeName, pascalName, moduleSnake),
+      );
+      await FileUtils.createFile(
+        path.join(statePath, '${snakeName}_pulses.dart'),
+        _pulsesFile(snakeName, pascalName),
+      );
+      await FileUtils.createFile(
+        path.join(statePath, '${snakeName}_flows.dart'),
+        _flowsFile(snakeName, pascalName),
+      );
+
+      Console.success(
+        'Created AirState architecture in $moduleSnake/ui/state/',
+      );
+      print('''
 ${Console.blue}Files created:${Console.reset}
   - ${snakeName}_state.dart
   - ${snakeName}_pulses.dart
@@ -61,7 +82,38 @@ ${Console.blue}Next steps:${Console.reset}
   1. Boot the state in ${moduleSnake}_module.dart:
      ${Console.green}${pascalName}State();${Console.reset}
 ''');
+    }
   }
+
+  String _generatorStateFile(
+    String snakeName,
+    String pascalName,
+    String moduleSnake,
+  ) =>
+      '''
+// ignore_for_file: unused_field
+import 'package:air_framework/air_framework.dart';
+
+part '${snakeName}_state.air.g.dart';
+
+@GenerateState('$moduleSnake')
+class ${pascalName}State extends _${pascalName}State {
+  // Private fields → automatically become StateFlows
+  final bool _isLoading = false;
+  final int _count = 0;
+
+  // Public void methods → automatically become Pulses
+  @override
+  void increment() {
+    count = count + 1;
+  }
+
+  @override
+  void decrement() {
+    count = count - 1;
+  }
+}
+''';
 
   String _stateFile(String snakeName, String pascalName, String moduleSnake) =>
       '''

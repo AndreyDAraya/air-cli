@@ -114,7 +114,7 @@ void main() async {
   // Register modules
   final manager = ModuleManager();
   
-  // Registration is async and calls module.onBind() and module.initialize()
+  // Registration is async and calls module.onBind(AirDI) and module.onInit(AirDI)
   await manager.register(AuthModule());
   await manager.register(HomeModule());
   
@@ -183,16 +183,16 @@ class AuthModule implements AppModule {
   String get initialRoute => '/login';
 
   @override
-  void onBind() {
-    AirDI().register<AuthService>(AuthService());
-    AirDI().registerLazySingleton<LoginState>(() => LoginState());
+  void onBind(AirDI di) {
+    di.register<AuthService>(AuthService());
+    di.registerLazySingleton<LoginState>(() => LoginState());
   }
 
   @override
-  Future<void> initialize() async {
-    AirDI().get<AuthService>();
+  Future<void> onInit(AirDI di) async {
+    di.get<AuthService>();
     // Initialize the state/controller
-    AirDI().get<LoginState>();
+    di.get<LoginState>();
   }
 
   @override
@@ -687,10 +687,10 @@ class HomeModule implements AppModule {
   String get initialRoute => '/';
 
   @override
-  void onBind() {}
+  void onBind(AirDI di) {}
 
   @override
-  Future<void> initialize() async {}
+  Future<void> onInit(AirDI di) async {}
 
   @override
   List<AirRoute> get routes => [

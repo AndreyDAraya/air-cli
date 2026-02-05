@@ -33,7 +33,7 @@ class ModelGenerator extends BaseGenerator {
       modelDir.createSync(recursive: true);
     }
 
-    final filePath = path.join(modelPath, '${snakeName}.dart');
+    final filePath = path.join(modelPath, '$snakeName.dart');
 
     checkFileExists(filePath);
 

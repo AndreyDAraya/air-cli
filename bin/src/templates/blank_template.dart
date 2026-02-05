@@ -47,14 +47,15 @@ void main() async {
   // Register modules
   final manager = ModuleManager();
   
-  // Registration is async and calls module.onBind() and module.initialize()
+  // Registration is async and calls module.onBind(AirDI) and module.onInit(AirDI)
   await manager.register(HomeModule());
   
   runApp(const App());
 }
 ''';
 
-  String _appDart(String projectName) => '''
+  String _appDart(String projectName) =>
+      '''
 import 'package:flutter/material.dart';
 import 'package:air_framework/air_framework.dart';
 
@@ -111,10 +112,10 @@ class HomeModule extends AppModule {
   String get initialRoute => '/';
 
   @override
-  void onBind() {}
+  void onBind(AirDI di) {}
 
   @override
-  Future<void> initialize() async {}
+  Future<void> onInit(AirDI di) async {}
 
   @override
   List<AirRoute> get routes => [

@@ -52,7 +52,7 @@ class ${pascalName}Widget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(8.0),
-      child: const Text('${pascalName} Widget'),
+      child: const Text('$pascalName Widget'),
     );
   }
 }
