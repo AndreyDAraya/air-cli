@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- **Generator Overhaul**: Replaced the legacy 3-file state generation with a unified `@GenerateState` pattern.
+- **Templates**: Updated module and screen templates to use `extends AppModule` and the latest `AirView` patterns.
+- **CLI improvements**: Improved "Next steps" instructions after generation to include better dependency injection examples.
+
 ## 1.0.1
 
 - **Reactive State Generation**: Added support for `@GenerateState` annotation with the `--generator` flag.

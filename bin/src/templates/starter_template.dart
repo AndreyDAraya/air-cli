@@ -57,16 +57,8 @@ class StarterTemplate {
     // State
     final statePath = path.join(authPath, 'ui', 'state');
     await FileUtils.createFile(
-      path.join(statePath, 'auth_state.dart'),
+      path.join(statePath, 'state.dart'),
       _authStateDart(projectName),
-    );
-    await FileUtils.createFile(
-      path.join(statePath, 'auth_pulses.dart'),
-      _authPulsesDart(),
-    );
-    await FileUtils.createFile(
-      path.join(statePath, 'auth_flows.dart'),
-      _authFlowsDart(),
     );
 
     // Views
@@ -110,6 +102,9 @@ import 'modules/auth/auth_module.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configure Air State
+  configureAirState();
   
   // Register modules
   final manager = ModuleManager();
@@ -160,10 +155,10 @@ import 'package:flutter/material.dart';
 import 'package:air_framework/air_framework.dart';
 import 'ui/views/login_view.dart';
 import 'ui/views/register_view.dart';
-import 'ui/state/auth_state.dart';
+import 'ui/state/state.dart';
 import 'services/auth_service.dart';
 
-class AuthModule implements AppModule {
+class AuthModule extends AppModule {
   @override
   String get id => 'auth';
 
@@ -184,15 +179,22 @@ class AuthModule implements AppModule {
 
   @override
   void onBind(AirDI di) {
-    di.register<AuthService>(AuthService());
-    di.registerLazySingleton<LoginState>(() => LoginState());
+    di.registerLazySingleton<AuthService>(() => AuthService());
+    di.registerLazySingleton<AuthState>(() => AuthState());
   }
 
   @override
   Future<void> onInit(AirDI di) async {
-    di.get<AuthService>();
     // Initialize the state/controller
-    di.get<LoginState>();
+    di.get<AuthState>();
+  }
+
+  @override
+  Future<void> onDispose(AirDI di) async {
+    di.unregisterModule(id);
+    di.unregister<AuthService>();
+    di.unregister<AuthState>();
+    super.onDispose(di);
   }
 
   @override
@@ -268,133 +270,74 @@ import 'package:air_framework/air_framework.dart';
 import '../../models/user.dart';
 import '../../services/auth_service.dart';
 
-part 'auth_pulses.dart';
-part 'auth_flows.dart';
+part 'state.air.g.dart';
 
-class LoginState extends AirState {
-  LoginState() : super(moduleId: 'auth');
+@GenerateState('auth')
+class AuthState extends _AuthState {
+ 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE FLOWS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  final bool _isLoading = false;
+  final String? _error = null;
+  final UserModel? _user = null;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PULSES
+  // ═══════════════════════════════════════════════════════════════════════════
 
   @override
-  void onInit() {
-    flow<String?>(AuthStateKeys.userName, null);
-    flow<String?>(AuthStateKeys.userEmail, null);
-    flow<bool>(AuthStateKeys.isLoggedIn, false);
-    flow<UserModel?>(AuthStateKeys.userModel, null);
-  }
-
-  @override
-  void onPulses() {
-    on(AuthPulses.login, _handleLogin);
-    on(AuthPulses.register, _handleRegister);
-    on(AuthPulses.logout, (_, {onSuccess, onError}) => _handleLogout());
-  }
-
-  Future<void> _handleLogin(
-    ParamsLogin data, {
-    void Function()? onSuccess,
-    void Function(String)? onError,
-  }) async {
-    flow(AuthStateKeys.loginLoading, true);
+  Future<void> login(({String email, String password}) data) async {
+    isLoading = true;
+    error = null;
 
     try {
-      final user = await inject<AuthService>().login(
+      final userModel = await AirDI().get<AuthService>().login(
         email: data.email,
         password: data.password,
       );
-      _updateUserState(user);
-      if (onSuccess != null) onSuccess();
+      user = userModel;
     } catch (e) {
-      if (onError != null) onError(e.toString());
+      error = e.toString();
+      rethrow;
     } finally {
-      flow(AuthStateKeys.loginLoading, false);
+      isLoading = false;
     }
   }
 
-  Future<void> _handleRegister(
-    ParamsRegister data, {
-    void Function()? onSuccess,
-    void Function(String)? onError,
-  }) async {
-    flow(AuthStateKeys.registerLoading, true);
+  @override
+  Future<void> register(({String name, String email, String password}) data) async {
+    isLoading = true;
+    error = null;
 
     try {
-      final user = await inject<AuthService>().register(
+      final userModel = await AirDI().get<AuthService>().register(
         name: data.name,
         email: data.email,
         password: data.password,
       );
-      _updateUserState(user);
-      if (onSuccess != null) onSuccess();
+      user = userModel;
     } catch (e) {
-      if (onError != null) onError(e.toString());
+      error = e.toString();
+      rethrow;
     } finally {
-      flow(AuthStateKeys.registerLoading, false);
+      isLoading = false;
     }
   }
 
-  void _handleLogout() async {
-    await inject<AuthService>().logout();
-    flow<String?>(AuthStateKeys.userName, null);
-    flow<String?>(AuthStateKeys.userEmail, null);
-    flow<bool>(AuthStateKeys.isLoggedIn, false);
-    flow<UserModel?>(AuthStateKeys.userModel, null);
+  @override
+  Future<void> logout() async {
+    await AirDI().get<AuthService>().logout();
+    user = null;
   }
-
-  void _updateUserState(UserModel user) {
-    flow<UserModel?>(AuthStateKeys.userModel, user);
-    flow<String?>(AuthStateKeys.userName, user.name);
-    flow<String?>(AuthStateKeys.userEmail, user.email);
-    flow<bool>(AuthStateKeys.isLoggedIn, true);
-  }
-}
-''';
-
-  String _authPulsesDart() => '''
-part of 'auth_state.dart';
-
-class AuthPulses {
-  static const login = AirPulse<ParamsLogin>('auth.login.submit');
-  static const register = AirPulse<ParamsRegister>('auth.register.submit');
-  static const logout = AirPulse<void>('auth.logout');
-}
-
-class ParamsLogin {
-  final String email;
-  final String password;
-
-  ParamsLogin({required this.email, required this.password});
-}
-
-class ParamsRegister {
-  final String name;
-  final String email;
-  final String password;
-
-  ParamsRegister({
-    required this.name,
-    required this.email,
-    required this.password,
-  });
-}
-''';
-
-  String _authFlowsDart() => '''
-part of 'auth_state.dart';
-
-class AuthStateKeys {
-  static const String loginLoading = 'auth.login.loading';
-  static const String registerLoading = 'auth.register.loading';
-  static const String userName = 'auth.user_name';
-  static const String userEmail = 'auth.user_email';
-  static const String isLoggedIn = 'auth.is_logged_in';
-  static const String userModel = 'auth.user_model';
 }
 ''';
 
   String _loginViewDart(String projectName) => '''
 import 'package:flutter/material.dart';
 import 'package:air_framework/air_framework.dart';
-import '../state/auth_state.dart';
+import '../state/state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -419,7 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     AuthPulses.login.pulse(
-      ParamsLogin(
+      (
         email: _emailController.text,
         password: _passwordController.text,
       ),
@@ -484,25 +427,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
                 ),
                 const SizedBox(height: 24),
-                AirBuilder<bool>(
-                  stateKey: AuthStateKeys.loginLoading,
-                  initialValue: false,
-                  builder: (context, isLoading) {
-                    return FilledButton(
-                      onPressed: isLoading ? null : _login,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Sign In'),
-                      ),
-                    );
-                  },
-                ),
+                AirView((context) {
+                  final isLoading = AuthFlows.isLoading.value;
+                  return FilledButton(
+                    onPressed: isLoading ? null : _login,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Sign In'),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => context.push('/register'),
@@ -521,7 +461,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _registerViewDart(String projectName) => '''
 import 'package:flutter/material.dart';
 import 'package:air_framework/air_framework.dart';
-import '../state/auth_state.dart';
+import '../state/state.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -548,7 +488,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     AuthPulses.register.pulse(
-      ParamsRegister(
+      (
         name: _nameController.text,
         email: _emailController.text,
         password: _passwordController.text,
@@ -628,25 +568,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                AirBuilder<bool>(
-                  stateKey: AuthStateKeys.registerLoading,
-                  initialValue: false,
-                  builder: (context, isLoading) {
-                    return FilledButton(
-                      onPressed: isLoading ? null : _register,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Sign Up'),
-                      ),
-                    );
-                  },
-                ),
+                AirView((context) {
+                  final isLoading = AuthFlows.isLoading.value;
+                  return FilledButton(
+                    onPressed: isLoading ? null : _register,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Sign Up'),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => context.pop(),
@@ -667,7 +604,7 @@ import 'package:flutter/material.dart';
 import 'package:air_framework/air_framework.dart';
 import 'ui/views/home_page.dart';
 
-class HomeModule implements AppModule {
+class HomeModule extends AppModule {
   @override
   String get id => 'home';
 
@@ -702,6 +639,7 @@ class HomeModule implements AppModule {
   String _homePageDart(String projectName) => '''
 import 'package:flutter/material.dart';
 import 'package:air_framework/air_framework.dart';
+import '../../../auth/ui/state/state.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -745,7 +683,7 @@ class HomeScreen extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
                 onPressed: () {
-                  Air().pulse(action: 'auth.logout', sourceModuleId: 'home');
+                  AuthPulses.logout.pulse(null);
                   context.go('/login');
                 },
               ),
@@ -761,19 +699,17 @@ class HomeScreen extends StatelessWidget {
                     'Welcome back,',
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
-                  DataConsumer<String?>(
-                    dataKey: 'auth.user_name',
-                    builder: (context, snapshot) {
-                      return Text(
-                        snapshot.data ?? 'User',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      );
-                    },
-                  ),
+                  AirView((context) {
+                    final user = AuthFlows.user.value;
+                    return Text(
+                       user?.name ?? 'User',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 32),
                   const Card(
                     child: Padding(

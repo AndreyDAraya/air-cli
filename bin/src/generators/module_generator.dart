@@ -16,7 +16,6 @@ class ModuleGenerator extends BaseGenerator {
 
     // Parse --all flag
     bool createAll = args.contains('--all');
-    bool useGenerator = args.contains('--generator');
 
     Console.header('Generating Module: $pascalName');
 
@@ -31,7 +30,7 @@ class ModuleGenerator extends BaseGenerator {
     // 1. Create module definition
     await FileUtils.createFile(
       path.join(modulePath, '${snakeName}_module.dart'),
-      _moduleFile(snakeName, pascalName, createAll, useGenerator),
+      _moduleFile(snakeName, pascalName, createAll),
     );
     Console.success('Created ${snakeName}_module.dart');
 
@@ -46,30 +45,12 @@ class ModuleGenerator extends BaseGenerator {
       // 3. Create Air State (Architecture)
       final statePath = path.join(modulePath, 'ui', 'state');
 
-      if (useGenerator) {
-        await FileUtils.createFile(
-          path.join(statePath, '${snakeName}_state.dart'),
-          _generatorStateFile(snakeName, pascalName, snakeName),
-        );
-      } else {
-        await FileUtils.createFile(
-          path.join(statePath, '${snakeName}_state.dart'),
-          _stateFile(snakeName, pascalName),
-        );
-        await FileUtils.createFile(
-          path.join(statePath, '${snakeName}_pulses.dart'),
-          _pulsesFile(snakeName, pascalName),
-        );
-        await FileUtils.createFile(
-          path.join(statePath, '${snakeName}_flows.dart'),
-          _flowsFile(snakeName, pascalName),
-        );
-      }
-      Console.success(
-        useGenerator
-            ? 'Created ui/state/${snakeName}_state.dart'
-            : 'Created ui/state/ (${snakeName}_state.dart, ${snakeName}_pulses.dart, ${snakeName}_flows.dart)',
+      await FileUtils.createFile(
+        path.join(statePath, '${snakeName}_state.dart'),
+        _generatorStateFile(snakeName, pascalName, snakeName),
       );
+
+      Console.success('Created ui/state/${snakeName}_state.dart');
 
       // 4. Create Service
       await FileUtils.createFile(
@@ -89,15 +70,10 @@ class ModuleGenerator extends BaseGenerator {
     print('');
     Console.success('Module "$pascalName" created with Air Framework!');
 
-    _printNextSteps(snakeName, pascalName, createAll, useGenerator);
+    _printNextSteps(snakeName, pascalName, createAll);
   }
 
-  void _printNextSteps(
-    String snakeName,
-    String pascalName,
-    bool createAll,
-    bool useGenerator,
-  ) {
+  void _printNextSteps(String snakeName, String pascalName, bool createAll) {
     print('''
 
 ${Console.cyan}Next steps:${Console.reset}
@@ -109,14 +85,10 @@ ${Console.cyan}Next steps:${Console.reset}
       print('''
   2. Inject your State in the Page:
      ${Console.green}final state = AirDI().get<${pascalName}State>();${Console.reset}
-''');
 
-      if (useGenerator) {
-        print('''
   3. Run build_runner to generate the reactive code:
      ${Console.green}dart run build_runner build${Console.reset}
 ''');
-      }
     }
 
     print('''
@@ -129,20 +101,9 @@ ${Console.cyan}Air Module structure:${Console.reset}
 ''');
 
     if (createAll) {
-      if (useGenerator) {
-        print('''
+      print('''
   │   └── state/
   │       └── ${snakeName}_state.dart
-''');
-      } else {
-        print('''
-  │   └── state/
-  │       ├── ${snakeName}_state.dart
-  │       ├── ${snakeName}_pulses.dart
-  │       └── ${snakeName}_flows.dart
-''');
-      }
-      print('''
   ├── services/
   └── models/
 ''');
@@ -162,29 +123,31 @@ part '${snakeName}_state.air.g.dart';
 
 @GenerateState('$moduleSnake')
 class ${pascalName}State extends _${pascalName}State {
-  // Private fields → automatically become StateFlows
-  final bool _isLoading = false;
-  final int _count = 0;
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE FLOWS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  // Public void methods → automatically become Pulses
+  final bool _isLoading = false;
+  final String _welcomeMessage = 'Welcome to $pascalName';
+
   @override
-  void increment() {
-    count = count + 1;
+  void onInit() {
+    // Initial setup if needed
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PULSES
+  // ═══════════════════════════════════════════════════════════════════════════
+
   @override
-  void decrement() {
-    count = count - 1;
+  void refresh(String message) {
+    welcomeMessage = message;
   }
 }
 ''';
 
-  String _moduleFile(
-    String snakeName,
-    String pascalName,
-    bool createAll,
-    bool useGenerator,
-  ) {
+  String _moduleFile(String snakeName, String pascalName, bool createAll) {
     if (createAll) {
       return '''
 import 'package:flutter/material.dart';
@@ -192,7 +155,7 @@ import 'package:air_framework/air_framework.dart';
 import 'ui/views/${snakeName}_page.dart';
 import 'ui/state/${snakeName}_state.dart';
 
-class ${pascalName}Module implements AppModule {
+class ${pascalName}Module extends AppModule {
   @override
   String get id => '$snakeName';
   
@@ -238,7 +201,7 @@ import 'package:flutter/material.dart';
 import 'package:air_framework/air_framework.dart';
 import 'ui/views/${snakeName}_page.dart';
 
-class ${pascalName}Module implements AppModule {
+class ${pascalName}Module extends AppModule {
   @override
   String get id => '$snakeName';
   
@@ -299,16 +262,13 @@ class ${pascalName}Page extends StatelessWidget {
           children: [
             const Icon(Icons.air, size: 64, color: Colors.blue),
             const SizedBox(height: 16),
-            AirBuilder<String>(
-              stateKey: ${pascalName}Flows.welcomeMessage,
-              initialValue: 'Loading...',
-              builder: (context, message) {
-                return Text(
-                  message,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                );
-              },
-            ),
+            AirView((context) {
+              final message = ${pascalName}Flows.welcomeMessage.value;
+              return Text(
+                message,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              );
+            }),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => ${pascalName}Pulses.refresh.pulse('Hello from Air!'),
@@ -355,51 +315,6 @@ class ${pascalName}Page extends StatelessWidget {
 ''';
     }
   }
-
-  String _stateFile(String snakeName, String pascalName) =>
-      '''
-import 'package:air_framework/air_framework.dart';
-
-part '${snakeName}_pulses.dart';
-part '${snakeName}_flows.dart';
-
-class ${pascalName}State extends AirState {
-  ${pascalName}State() : super(moduleId: '$snakeName');
-
-  @override
-  void onInit() {
-    flow<String>(${pascalName}Flows.welcomeMessage, 'Welcome to $pascalName');
-  }
-
-  @override
-  void onPulses() {
-    on(${pascalName}Pulses.refresh, _handleRefresh);
-  }
-
-  void _handleRefresh(String message, {void Function()? onSuccess, void Function(String)? onError}) {
-    flow<String>(${pascalName}Flows.welcomeMessage, message);
-    onSuccess?.call();
-  }
-}
-''';
-
-  String _pulsesFile(String snakeName, String pascalName) =>
-      '''
-part of '${snakeName}_state.dart';
-
-class ${pascalName}Pulses {
-  static const refresh = AirPulse<String>('$snakeName.refresh');
-}
-''';
-
-  String _flowsFile(String snakeName, String pascalName) =>
-      '''
-part of '${snakeName}_state.dart';
-
-class ${pascalName}Flows {
-  static const String welcomeMessage = '$snakeName.welcome_message';
-}
-''';
 
   String _serviceFile(String snakeName, String pascalName) =>
       '''

@@ -44,6 +44,9 @@ import 'modules/home/home_module.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Configure Air State
+  configureAirState();
+  
   // Register modules
   final manager = ModuleManager();
   

@@ -79,9 +79,14 @@ class CreateCommand {
     Console.success('Structure created');
 
     // Step 4: Apply template
-    Console.step(4, 4, 'Applying $template template...');
+    Console.step(4, 5, 'Applying $template template...');
     await _applyTemplate(projectName, template, org);
     Console.success('Template applied');
+
+    // Step 5: Run Build Runner
+    Console.step(5, 5, 'Generating code...');
+    await _runBuildRunner(projectName);
+    Console.success('Code generated');
 
     print('');
     Console.header('Project Created Successfully! 🎉');
@@ -105,13 +110,8 @@ ${Console.cyan}Project structure:${Console.reset}
   Future<void> _addDependencies(String projectName) async {
     Console.info('Adding dependencies...');
 
-    final dependencies = [
-      'archive:^4.0.4',
-      'file_picker:^8.3.7',
-      'path_provider:^2.1.5',
-      'path:^1.9.1',
-      'go_router:^17.0.1',
-    ];
+    final dependencies = ['go_router:^17.0.1'];
+    final devDependencies = ['build_runner:^2.4.8', 'air_generator:^1.0.0'];
 
     // Air Framework dependency
     // Check for environment variable for local dev, otherwise use git/pub
@@ -139,10 +139,29 @@ ${Console.cyan}Project structure:${Console.reset}
       );
     }
 
+    if (devDependencies.isNotEmpty) {
+      await Process.run(
+        'flutter',
+        ['pub', 'add', '--dev', ...devDependencies],
+        workingDirectory: projectName,
+        runInShell: true,
+      );
+    }
+
     // Run pub get to be sure
     await Process.run(
       'flutter',
       ['pub', 'get'],
+      workingDirectory: projectName,
+      runInShell: true,
+    );
+  }
+
+  Future<void> _runBuildRunner(String projectName) async {
+    Console.info('Generating code...');
+    await Process.run(
+      'dart',
+      ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
       workingDirectory: projectName,
       runInShell: true,
     );
@@ -160,6 +179,27 @@ ${Console.cyan}Project structure:${Console.reset}
     if (testFile.existsSync()) {
       await testFile.delete();
     }
+
+    // Create analysis_options.yaml
+    await _createAnalysisOptions(projectName);
+  }
+
+  Future<void> _createAnalysisOptions(String projectName) async {
+    final content = '''
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Add your rules here
+
+analyzer:
+  errors:
+    unused_field: ignore
+''';
+
+    await File(
+      path.join(projectName, 'analysis_options.yaml'),
+    ).writeAsString(content);
   }
 
   Future<void> _applyTemplate(
