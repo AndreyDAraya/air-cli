@@ -3,6 +3,7 @@ import 'package:path/path.dart' as path;
 import '../utils/console.dart';
 import '../templates/blank_template.dart';
 import '../templates/starter_template.dart';
+import 'skills_command.dart';
 
 /// Create command - creates a new Air project
 class CreateCommand {
@@ -14,7 +15,16 @@ class CreateCommand {
     }
 
     // Parse arguments
-    final projectName = args[0];
+    final inputName = args[0];
+    final isCurrentDir = inputName == '.';
+    final projectPath = isCurrentDir ? '.' : inputName;
+    String projectName = isCurrentDir
+        ? path.basename(Directory.current.absolute.path)
+        : inputName;
+
+    // Sanitize project name (snake_case)
+    projectName = _sanitizeProjectName(projectName);
+
     String template = 'blank';
     String org = 'com.example';
 
@@ -34,16 +44,18 @@ class CreateCommand {
     // Validate project name
     if (!RegExp(r'^[a-z][a-z0-9_]*$').hasMatch(projectName)) {
       Console.error(
-        'Invalid project name. Use lowercase letters, numbers, and underscores.',
+        'Invalid project name "$projectName". Use lowercase letters, numbers, and underscores.',
       );
       exit(1);
     }
 
-    // Check if directory exists
-    final projectDir = Directory(projectName);
-    if (projectDir.existsSync()) {
-      Console.error('Directory "$projectName" already exists');
-      exit(1);
+    // Check if directory exists (only if not current dir)
+    if (!isCurrentDir) {
+      final projectDir = Directory(projectPath);
+      if (projectDir.existsSync()) {
+        Console.error('Directory "$projectPath" already exists');
+        exit(1);
+      }
     }
 
     Console.header('Creating Air Framework Project');
@@ -53,12 +65,14 @@ class CreateCommand {
     print('');
 
     // Step 1: Create Flutter project
-    Console.step(1, 4, 'Creating Flutter project...');
+    Console.step(1, 6, 'Creating Flutter project...');
     final flutterResult = await Process.run('flutter', [
       'create',
       '--org',
       org,
+      '--project-name',
       projectName,
+      projectPath,
     ], runInShell: true);
 
     if (flutterResult.exitCode != 0) {
@@ -69,31 +83,44 @@ class CreateCommand {
     Console.success('Flutter project created');
 
     // Step 2: Add dependencies
-    Console.step(2, 4, 'Adding dependencies...');
-    await _addDependencies(projectName);
+    Console.step(2, 6, 'Adding dependencies...');
+    await _addDependencies(projectPath);
     Console.success('Dependencies added');
 
     // Step 3: Create folder structure
-    Console.step(3, 4, 'Creating module structure...');
-    await _createStructure(projectName);
+    Console.step(3, 6, 'Creating module structure...');
+    await _createStructure(projectPath);
     Console.success('Structure created');
 
     // Step 4: Apply template
-    Console.step(4, 5, 'Applying $template template...');
-    await _applyTemplate(projectName, template, org);
+    Console.step(4, 6, 'Applying $template template...');
+    await _applyTemplate(projectPath, template, org);
     Console.success('Template applied');
 
     // Step 5: Run Build Runner
-    Console.step(5, 5, 'Generating code...');
-    await _runBuildRunner(projectName);
+    Console.step(5, 6, 'Generating code...');
+    await _runBuildRunner(projectPath);
     Console.success('Code generated');
+
+    // Step 6: Install Air Framework skill
+    Console.step(6, 6, 'Installing Air Framework skill...');
+    final previousDir = Directory.current;
+    Directory.current = Directory(projectPath);
+    try {
+      await SkillsCommand().run(['install']);
+    } catch (_) {
+      Console.warning(
+        'Could not auto-install skill. Run "air skills install" manually.',
+      );
+    } finally {
+      Directory.current = previousDir;
+    }
 
     print('');
     Console.header('Project Created Successfully! 🎉');
     print('''
 ${Console.cyan}Next steps:${Console.reset}
-  cd $projectName
-  flutter pub get
+  ${isCurrentDir ? '' : 'cd $projectName\n  '}flutter pub get
   flutter run
 
 ${Console.blue}Generate new modules:${Console.reset}
@@ -103,15 +130,17 @@ ${Console.cyan}Project structure:${Console.reset}
   lib/
   ├── main.dart
   ├── app.dart
-  └── modules/        # Your feature modules (and core dependencies via package)
+  └── modules/        # Your feature modules
+  .agent/skills/       # AI agent skill (auto-installed)
+  AGENTS.md            # Agent guidelines
 ''');
   }
 
   Future<void> _addDependencies(String projectName) async {
     Console.info('Adding dependencies...');
 
-    final dependencies = ['go_router:^17.0.1'];
-    final devDependencies = ['build_runner:^2.4.8', 'air_generator:^1.0.0'];
+    final dependencies = ['go_router'];
+    final devDependencies = ['build_runner', 'air_generator'];
 
     // Air Framework dependency
     // Check for environment variable for local dev, otherwise use git/pub
@@ -127,7 +156,7 @@ ${Console.cyan}Project structure:${Console.reset}
       );
     } else {
       // Default to hosted version for production
-      dependencies.add('air_framework:^1.0.0');
+      dependencies.add('air_framework');
     }
 
     if (dependencies.isNotEmpty) {
@@ -219,5 +248,25 @@ analyzer:
         Console.warning('Unknown template "$template", using blank');
         await BlankTemplate().apply(projectName, org);
     }
+  }
+
+  String _sanitizeProjectName(String name) {
+    var sanitized = name
+        .toLowerCase()
+        .replaceAll(
+          RegExp(r'[^a-z0-9_]'),
+          '_',
+        ) // Replace non-alphanumeric with _
+        .replaceAll(RegExp(r'_+'), '_'); // Collapse multiple underscores
+
+    // Remove leading/trailing underscores
+    sanitized = sanitized.replaceAll(RegExp(r'^_+|_+$'), '');
+
+    // Ensure it starts with a letter
+    if (sanitized.isEmpty || !RegExp(r'^[a-z]').hasMatch(sanitized)) {
+      sanitized = 'air_$sanitized';
+    }
+
+    return sanitized;
   }
 }

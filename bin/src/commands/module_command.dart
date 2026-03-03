@@ -146,13 +146,31 @@ ${Console.blue}Commands:${Console.reset}
   }
 
   Future<void> _syncDependencies(String moduleSourcePath) async {
+    final moduleYamlFile = File(path.join(moduleSourcePath, 'module.yaml'));
     final modulePubspecFile = File(path.join(moduleSourcePath, 'pubspec.yaml'));
-    if (!modulePubspecFile.existsSync()) return;
 
-    Console.info('Syncing dependencies from module...');
+    String? content;
+    String fileName = '';
 
-    final content = await modulePubspecFile.readAsString();
-    // Improved extraction using regex for key-value pairs
+    if (moduleYamlFile.existsSync()) {
+      content = await moduleYamlFile.readAsString();
+      if (content.contains('dependencies:')) {
+        fileName = 'module.yaml';
+      } else {
+        content = null; // module.yaml exists but no deps, try pubspec
+      }
+    }
+
+    if (content == null && modulePubspecFile.existsSync()) {
+      content = await modulePubspecFile.readAsString();
+      fileName = 'pubspec.yaml';
+    }
+
+    if (content == null) return;
+
+    Console.info('Syncing dependencies from $fileName...');
+
+    // Extract dependencies section
     final depSection = RegExp(
       r'dependencies:([\s\S]*?)(?=\n\S|$)',
     ).firstMatch(content);
@@ -172,11 +190,9 @@ ${Console.blue}Commands:${Console.reset}
         final name = parts[0].trim();
         var version = parts.sublist(1).join(':').trim();
 
-        // Handle simple versioning or empty (any)
         if (version.isEmpty) {
           dependenciesToAdd.add(name);
         } else {
-          // Remove potential comments or extra stuff
           version = version.split('#')[0].trim();
           dependenciesToAdd.add('$name:$version');
         }
@@ -184,12 +200,13 @@ ${Console.blue}Commands:${Console.reset}
     }
 
     if (dependenciesToAdd.isEmpty) {
-      Console.info('No new dependencies to add.');
+      Console.info('No new dependencies found in $fileName.');
       return;
     }
 
     for (final dep in dependenciesToAdd) {
       Console.info('Adding dependency: $dep');
+      // Fix: Use 'flutter pub add' to add dependencies to the project
       final result = await Process.run('flutter', [
         'pub',
         'add',

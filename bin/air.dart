@@ -10,6 +10,7 @@ import 'src/commands/create_command.dart';
 import 'src/commands/generate_command.dart';
 
 import 'src/commands/doctor_command.dart';
+import 'src/commands/skills_command.dart';
 import 'src/commands/module_command.dart';
 import 'src/utils/console.dart';
 
@@ -52,6 +53,10 @@ void main(List<String> args) async {
             await DoctorCommand().run(commandArgs);
             break;
 
+          case 'skills':
+            await SkillsCommand().run(commandArgs);
+            break;
+
           case 'help':
           case '--help':
           case '-h':
@@ -60,7 +65,7 @@ void main(List<String> args) async {
           case 'version':
           case '--version':
           case '-v':
-            Console.info('Air Framework CLI v1.0.2');
+            Console.info('Air Framework CLI v${Console.version}');
             break;
           default:
             Console.error('Unknown command: $command');
@@ -106,8 +111,8 @@ ${Console.blue}Commands:${Console.reset}
     widget <name>            Generate a new widget
   
   doctor                     Check project configuration
+  skills install             Install the Air Framework agent skill
 
-  
   help                       Show this help message
   version                    Show version
 

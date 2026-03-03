@@ -1,7 +1,25 @@
 import 'dart:io';
+import 'package:path/path.dart' as p;
+
+String getVersion() {
+  final scriptPath = Platform.script.toFilePath();
+  var packageDir = p.dirname(scriptPath);
+  if (packageDir.contains('.dart_tool')) {
+    packageDir = p.dirname(p.dirname(p.dirname(p.dirname(packageDir))));
+  }
+  final pubspec = File(p.join(packageDir, 'pubspec.yaml'));
+  final content = pubspec.readAsStringSync();
+  final match = RegExp(
+    r'^version:\s*(\S+)',
+    multiLine: true,
+  ).firstMatch(content);
+  return match?.group(1) ?? '0.0.0';
+}
 
 /// Console utilities for CLI output
 class Console {
+  static String get version => getVersion();
+
   static const String reset = '\x1B[0m';
   static const String bold = '\x1B[1m';
   static const String red = '\x1B[31m';
@@ -60,6 +78,24 @@ $cyan    ___    ____  ____       ______   __    ____
     return input == 'y' || input == 'yes';
   }
 
+  static T select<T>(String question, List<SelectOption<T>> options) {
+    stdout.writeln('$yellow? $reset$question');
+    for (var i = 0; i < options.length; i++) {
+      stdout.writeln('  ${i + 1}) ${options[i].label}');
+    }
+
+    while (true) {
+      stdout.write('$yellow> ${reset}Select an option (1-${options.length}): ');
+      final input = stdin.readLineSync();
+      final index = int.tryParse(input ?? '') ?? -1;
+
+      if (index >= 1 && index <= options.length) {
+        return options[index - 1].value;
+      }
+      Console.error('Invalid selection. Please try again.');
+    }
+  }
+
   static void progress(String message) {
     stdout.write('$cyan ⋯ $reset$message\r');
   }
@@ -67,4 +103,11 @@ $cyan    ___    ____  ____       ______   __    ____
   static void progressDone(String message) {
     print('$green ✓ $reset$message');
   }
+}
+
+class SelectOption<T> {
+  final String label;
+  final T value;
+
+  SelectOption(this.label, this.value);
 }
