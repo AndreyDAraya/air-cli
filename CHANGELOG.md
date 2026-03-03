@@ -1,6 +1,11 @@
 # Changelog
 
 
+## 1.0.6
+
+- **Visual Identity**: Added the official Air Framework SVG logo to the README.
+- **Documentation**: Updated README with the new logo and visual assets.
+
 ## 1.0.5
 
 - **Adapter System**: Added `air generate adapter <name>` command to scaffold headless service integrations with the recommended structure (contracts, implementation, adapter).

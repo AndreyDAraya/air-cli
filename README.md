@@ -1,9 +1,14 @@
 # Air CLI
 
+<p align="center">
+  <img src="assets/air-aero.svg" width="200" alt="Air CLI Logo" />
+</p>
+
 [![pub package](https://img.shields.io/pub/v/air_cli.svg)](https://pub.dev/packages/air_cli)
 [![publisher](https://img.shields.io/pub/publisher/air_cli.svg)](https://pub.dev/packages/air_cli)
 [![coverage](https://img.shields.io/badge/coverage-100%25-success)](https://github.com/your_username/air_cli)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-air--framework.flutter.md-blue)](https://air-framework.flutter.md/)
 
 ```text
    ___    ____  ____       ______   __    ____
@@ -112,6 +117,12 @@ Air Framework promotes a clear separation of concerns:
 ## 🧪 Reliability
 
 We take quality seriously. The Air CLI is maintained with **100% Unit Test Coverage**, ensuring that every command and generator works exactly as expected.
+
+## 📖 Documentation
+
+For the full documentation, guides, and API reference visit:
+
+👉 **[air-framework.flutter.md](https://air-framework.flutter.md/)**
 
 ## 📄 License
 
