@@ -1,6 +1,19 @@
 # Changelog
 
 
+## 1.0.5
+
+- **Adapter System**: Added `air generate adapter <name>` command to scaffold headless service integrations with the recommended structure (contracts, implementation, adapter).
+- **Adapter Skill Documentation**: Added `references/adapters.md` with full adapter reference (lifecycle, boot order, contract rule, naming conventions, DevTools).
+- **Updated Skill**: Updated `SKILL.md` with adapter keywords, quick-start, key rules (adapters before modules, contract rule), and updated file structure.
+- **Updated CLI Reference**: Added adapter generator section to `references/cli.md`.
+
+## 1.0.4
+
+- **Air Adapters**: Introduced `AirAdapter` base class and `AdapterManager` for headless service integrations (HTTP, analytics, error tracking, etc.).
+- **DevTools**: Added ADAPTERS tab to the DevTools inspector (8 tabs total).
+- **Framework Exports**: Updated `core.dart` and `framework.dart` barrel exports for adapters.
+
 ## 1.0.3
 
 - **AI Agent Selection**: Added interactive selection and "all" option to `air skills install`. Supports Antigravity, Claude Code, OpenCode, and Cursor.
