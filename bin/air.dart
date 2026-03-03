@@ -109,6 +109,7 @@ ${Console.blue}Commands:${Console.reset}
     state <name>             Generate a new AirState controller
     model <name>             Generate a new model
     widget <name>            Generate a new widget
+    adapter <name>           Generate a new adapter
   
   doctor                     Check project configuration
   skills install             Install the Air Framework agent skill

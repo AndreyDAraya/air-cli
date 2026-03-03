@@ -1,6 +1,7 @@
 import 'dart:io';
 import '../utils/console.dart';
 import '../utils/file_utils.dart';
+import '../generators/adapter_generator.dart';
 import '../generators/module_generator.dart';
 import '../generators/screen_generator.dart';
 import '../generators/service_generator.dart';
@@ -62,6 +63,10 @@ class GenerateCommand {
       case 'w':
         await WidgetGenerator().generate(name, args);
         break;
+      case 'adapter':
+      case 'a':
+        await AdapterGenerator().generate(name, args);
+        break;
       default:
         Console.error('Unknown generator type: $type');
         _printUsage();
@@ -81,11 +86,13 @@ Types:
   state, st     Generate a new AirState controller (--module=<module>)
   model, mod    Generate a new model (--module=<module> | --core)
   widget, w     Generate a new widget (--module=<module>)
+  adapter, a    Generate a new adapter (contracts + implementation)
 
 Examples:
   air generate module products
   air g screen product_list --module=products
   air g service product --module=products
+  air g adapter sentry
 ''');
   }
 }

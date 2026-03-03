@@ -92,6 +92,16 @@ air g widget product_card --module=products
 ```
 Creates a reusable widget in `lib/modules/products/ui/widgets/`.
 
+### Adapter
+```bash
+air g adapter sentry
+```
+Creates `lib/adapters/sentry/` with:
+- `contracts/sentry_client.dart` — abstract contract
+- `contracts/sentry_response.dart` — response wrapper
+- `sentry_adapter.dart` — `AirAdapter` subclass
+- `sentry_impl.dart` — concrete implementation
+
 ## `air module` — Module Management
 
 ```bash

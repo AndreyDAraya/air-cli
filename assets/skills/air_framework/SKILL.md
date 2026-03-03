@@ -1,6 +1,6 @@
 ---
 name: air_framework
-description: Create modular Flutter apps with the Air framework. Use this skill when building Flutter apps with modular architecture, generating modules, screens, services, or scaffolding new projects. Always use this skill when the user mentions Air Framework, AirState, AirModule, AirDI, air_framework, air_state, air_generator, air_cli, AppModule, AirView, AirBuilder, AirController, @GenerateState, Flows, Pulses, or when they want to build a new Flutter feature/module in this workspace.
+description: Create modular Flutter apps with the Air framework. Use this skill when building Flutter apps with modular architecture, generating modules, screens, services, adapters, or scaffolding new projects. Always use this skill when the user mentions Air Framework, AirState, AirModule, AirAdapter, AirDI, air_framework, air_state, air_generator, air_cli, AppModule, AdapterManager, AirView, AirBuilder, AirController, @GenerateState, Flows, Pulses, HttpClient, or when they want to build a new Flutter feature/module/adapter in this workspace.
 ---
 
 # Air Framework Skill
@@ -18,6 +18,7 @@ A complete guide to building production-quality Flutter apps with the Air Framew
 
 For in-depth reference read:
 - `references/modules.md` — Module system & lifecycle
+- `references/adapters.md` — Adapter system (headless service integrations)
 - `references/state.md` — State management (Flows, Pulses, AirView)
 - `references/di.md` — Dependency injection (AirDI)
 - `references/cli.md` — CLI commands & generators
@@ -37,6 +38,10 @@ air create my_app --template=starter --org=com.example
 # Add a module
 air g module products --all
 # Creates: lib/modules/products/ with module, state, view, service
+
+# Add an adapter (headless service integration)
+air g adapter sentry
+# Creates: lib/adapters/sentry/ with contracts, impl, adapter
 ```
 
 ### Step 2 — Define a Module
@@ -148,15 +153,22 @@ class ProductsPage extends StatelessWidget {
 }
 ```
 
-### Step 5 — Initialize in main.dart
+### Step 5 — Register Adapters & Modules in main.dart
 
 ```dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  configureAirState(); // sets up the Air State delegate
+  configureAirState();
 
+  // 1. Register Adapters FIRST (infrastructure)
+  final adapters = AdapterManager();
+  await adapters.register(
+    DioAdapter(baseUrl: 'https://api.example.com'),
+  );
+
+  // 2. Register Modules SECOND (features — can use adapter services)
   final manager = ModuleManager();
-  await manager.register(ProductsModule()); // order matters: deps first
+  await manager.register(ProductsModule());
 
   runApp(const MyApp());
 }
@@ -178,11 +190,13 @@ class MyApp extends StatelessWidget {
 ## Key Rules
 
 1. **`onBind` is sync-only.** Never call `await` inside `onBind`. Use `onInit` for async setup.
-2. **Register dependencies before dependents.** Module order in `main.dart` matters.
-3. **Data flows down, actions flow up.** State → UI via Flows. UI → State via Pulses.
-4. **One module per feature.** Modules are the unit of encapsulation.
-5. **Use `AirView` for reactive UI.** Wrap any widget that reads state in `AirView` to get automatic rebuilds.
-6. **Run build_runner after changing state.** Any change to `@GenerateState` classes requires regenerating code.
+2. **Adapters before Modules.** Register adapters in `main.dart` before modules so modules can depend on adapter services.
+3. **Adapters MUST have a contract.** Every adapter must expose an abstract interface, never the raw library.
+4. **Register dependencies before dependents.** Module order in `main.dart` matters.
+5. **Data flows down, actions flow up.** State → UI via Flows. UI → State via Pulses.
+6. **One module per feature.** Modules are the unit of encapsulation.
+7. **Use `AirView` for reactive UI.** Wrap any widget that reads state in `AirView` to get automatic rebuilds.
+8. **Run build_runner after changing state.** Any change to `@GenerateState` classes requires regenerating code.
 
 ---
 
@@ -218,7 +232,14 @@ context.push('/products/new');
 lib/
 ├── main.dart
 ├── app.dart
-└── modules/
+├── adapters/                        # Headless service integrations
+│   └── <service>/
+│       ├── contracts/
+│       │   ├── <service>_client.dart # Abstract interface ⭐
+│       │   └── <service>_response.dart
+│       ├── <service>_adapter.dart    # AirAdapter subclass
+│       └── <service>_impl.dart      # Concrete implementation
+└── modules/                         # Feature modules
     └── <feature>/
         ├── <feature>_module.dart     # AppModule subclass
         ├── ui/
