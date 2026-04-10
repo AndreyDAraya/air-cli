@@ -102,15 +102,18 @@ ${Console.blue}Commands:${Console.reset}
       final targetPath = path.join('lib/modules', moduleName);
 
       if (Directory(targetPath).existsSync()) {
-        Console.warning(
-          'Module "$moduleName" already exists at $targetPath. Overwriting...',
+        final overwrite = Console.confirm(
+          'Module "$moduleName" already exists at $targetPath. Overwrite?',
+          defaultValue: false,
         );
+        if (!overwrite) {
+          Console.info('Skipping module "$moduleName" — keeping existing version.');
+          return;
+        }
         await Directory(targetPath).delete(recursive: true);
       }
 
       // 3. Copy module files
-      // We assume the module code is in the root of the source or in a 'lib' folder
-      // For this implementation, we copy everything except .git
       await _copyDirectory(Directory(moduleSourcePath), Directory(targetPath));
 
       // 4. Sync dependencies
@@ -121,6 +124,9 @@ ${Console.blue}Commands:${Console.reset}
       // 5. Run pub get
       Console.info('Running flutter pub get...');
       await Process.run('flutter', ['pub', 'get'], runInShell: true);
+
+      // 6. Show registration hint from module.yaml
+      _printRegistrationHint(moduleSourcePath, moduleName);
     } finally {
       if (tempPath.isNotEmpty && Directory(tempPath).existsSync()) {
         await Directory(tempPath).delete(recursive: true);
@@ -219,5 +225,21 @@ ${Console.blue}Commands:${Console.reset}
         Console.success('Added dependency "$dep"');
       }
     }
+  }
+
+  void _printRegistrationHint(String moduleSourcePath, String moduleName) {
+    final manifestFile = File(path.join(moduleSourcePath, 'module.yaml'));
+    if (!manifestFile.existsSync()) return;
+
+    final content = manifestFile.readAsStringSync();
+    final match = RegExp(r'module_class:\s*(\S+)').firstMatch(content);
+    if (match == null) return;
+
+    final moduleClass = match.group(1)!.trim();
+    print('');
+    Console.info('Register the module in your ${Console.cyan}main.dart${Console.reset}:');
+    print('');
+    print('  ${Console.cyan}ModuleManager().register([${Console.green}$moduleClass()${Console.cyan}]);${Console.reset}');
+    print('');
   }
 }

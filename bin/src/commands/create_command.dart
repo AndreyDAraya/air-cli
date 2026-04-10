@@ -3,6 +3,7 @@ import 'package:path/path.dart' as path;
 import '../utils/console.dart';
 import '../templates/blank_template.dart';
 import '../templates/starter_template.dart';
+import '../templates/community_module_template.dart';
 import 'skills_command.dart';
 
 /// Create command - creates a new Air project
@@ -12,6 +13,23 @@ class CreateCommand {
       Console.error('Please provide a project name');
       print('Usage: air create <name> [options]');
       exit(1);
+    }
+
+    // Community module shortcut: air create community-module <name>
+    if (args[0] == 'community-module') {
+      if (args.length < 2) {
+        Console.error('Please provide a module name');
+        print('Usage: air create community-module <name> [--author=you]');
+        exit(1);
+      }
+      String author = 'your_name';
+      for (int i = 2; i < args.length; i++) {
+        if (args[i].startsWith('--author=')) {
+          author = args[i].split('=')[1];
+        }
+      }
+      await CommunityModuleTemplate().apply(args[1], author: author);
+      return;
     }
 
     // Parse arguments

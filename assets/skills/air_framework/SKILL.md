@@ -65,6 +65,7 @@ class ProductsModule extends AppModule {
 
   @override
   void onBind(AirDI di) {
+    super.onBind(di); // required — handles lifecycle state transitions
     // SYNC ONLY: register everything lazily
     di.registerLazySingleton<ProductsRepository>(() => ProductsRepository());
     di.registerLazySingleton<ProductsState>(() => ProductsState());
@@ -72,6 +73,7 @@ class ProductsModule extends AppModule {
 
   @override
   Future<void> onInit(AirDI di) async {
+    await super.onInit(di); // required — handles lifecycle state transitions
     // ASYNC: initialize, load, connect
     await di.get<ProductsRepository>().init();
     di.get<ProductsState>(); // ensures state is initialized
@@ -190,7 +192,8 @@ class MyApp extends StatelessWidget {
 ## Key Rules
 
 1. **`onBind` is sync-only.** Never call `await` inside `onBind`. Use `onInit` for async setup.
-2. **Adapters before Modules.** Register adapters in `main.dart` before modules so modules can depend on adapter services.
+2. **Always call `super` in lifecycle hooks.** `onBind`, `onInit`, and `onDispose` are all `@mustCallSuper`. Call `super.onBind(di)` / `await super.onInit(di)` / `super.onDispose(di)` — they manage lifecycle state transitions.
+3. **Adapters before Modules.** Register adapters in `main.dart` before modules so modules can depend on adapter services.
 3. **Adapters MUST have a contract.** Every adapter must expose an abstract interface, never the raw library.
 4. **Register dependencies before dependents.** Module order in `main.dart` matters.
 5. **Data flows down, actions flow up.** State → UI via Flows. UI → State via Pulses.

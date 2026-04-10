@@ -1,6 +1,17 @@
 # Changelog
 
 
+## 1.0.7
+
+### New Features
+
+- **`air create community-module <name>`**: New command to scaffold a standalone module ready to publish and share with the community. Generates `module.yaml` (Air manifest), `pubspec.yaml`, `README.md`, full `lib/` structure (module, state, service, screen, barrel export), and `.gitignore`. Supports `--author=<github_username>`.
+
+### Bug Fixes
+
+- **`air module add` now asks before overwriting**: Previously silently deleted and replaced an existing module. Now prompts with `y/N` (default: No) before overwriting, preventing accidental loss of local customizations.
+- **`air module add` shows registration hint**: After a successful install, reads `module_class` from the module's `module.yaml` and prints the exact `ModuleManager().register([...])` snippet the user needs to add to `main.dart`.
+
 ## 1.0.6
 
 - **Visual Identity**: Added the official Air Framework SVG logo to the README.

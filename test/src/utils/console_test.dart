@@ -10,7 +10,7 @@ void main() {
     List<String> capturePrint(void Function() callback) {
       final logs = <String>[];
       final spec = ZoneSpecification(
-        print: (_, __, ___, line) {
+        print: (_, _, _, line) {
           logs.add(line);
         },
       );

@@ -20,20 +20,25 @@ class MyModule extends AppModule {
   // ── Lifecycle ──────────────────────────────────────────
 
   // SYNC: register DI bindings here (no await)
+  // @mustCallSuper — always call super.onBind(di) first
   @override
   void onBind(AirDI di) {
+    super.onBind(di);
     di.registerLazySingleton<MyService>(() => MyService(), moduleId: id);
     di.registerLazySingleton<MyState>(() => MyState(), moduleId: id);
   }
 
   // ASYNC: heavy initialization (DB, network, file I/O)
+  // @mustCallSuper — always await super.onInit(di) first
   @override
   Future<void> onInit(AirDI di) async {
+    await super.onInit(di);
     await di.get<MyService>().initialize();
     di.get<MyState>(); // trigger lazy init
   }
 
   // CLEANUP: called when module is unregistered
+  // @mustCallSuper — always call super.onDispose(di) last
   @override
   Future<void> onDispose(AirDI di) async {
     di.unregisterModule(id);

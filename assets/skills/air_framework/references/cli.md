@@ -50,6 +50,20 @@ air create my_app --template=starter --org=com.example
 | `--template` | `blank` (default), `starter` | `starter` includes auth module scaffold |
 | `--org` | `com.example` | Reverse-domain org ID |
 
+### Community Module
+
+Creates a standalone module repo ready to publish and share with the community via `air module add`:
+
+```bash
+air create community-module my_auth_module --author=yourname
+```
+
+Generates a complete standalone structure with `module.yaml`, `pubspec.yaml`, `README.md`, and full `lib/` scaffold (module, state, service, screen). Push to GitHub and share with:
+
+```bash
+air module add https://github.com/yourname/my_auth_module.git
+```
+
 ## `air generate` — Code Generators
 
 Alias: `air g`
@@ -120,11 +134,19 @@ air pub add https://github.com/user/air_module_auth.git
 Modules can define their own metadata and dependencies in a `module.yaml` file in their root. When using `air module add`, the CLI will automatically:
 1. Identify the module name from `module.yaml`.
 2. Sync dependencies listed in `module.yaml` (using `flutter pub add`).
+3. Show a registration hint with the exact `ModuleManager().register([...])` snippet.
+
+If a module already exists at the target path, the CLI **asks before overwriting** (default: No), protecting any local customizations.
 
 **Example `module.yaml`:**
 ```yaml
 name: auth_supabase
+version: 1.0.0
 description: Authentication system with Supabase
+author: yourname
+repository: https://github.com/yourname/auth_supabase
+air_framework: ">=1.0.0 <2.0.0"
+module_class: AuthSupabaseModule   # shown in registration hint after install
 dependencies:
   supabase_flutter: ^2.0.0
   provider: any

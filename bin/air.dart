@@ -98,6 +98,8 @@ ${Console.blue}Commands:${Console.reset}
   create <name>              Create a new Air Framework project
     --template=<template>    Template to use (blank, starter)
     --org=<org>              Organization identifier (com.example)
+  create community-module <name>   Create a standalone module to share with the community
+    --author=<author>        Your GitHub username
   
   module add <source>        Add a module (Git URL or local path)
   pub add <source>           Shortcut for module add
