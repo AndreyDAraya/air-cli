@@ -65,7 +65,7 @@ void main(List<String> args) async {
           case 'version':
           case '--version':
           case '-v':
-            Console.info('Air Framework CLI v${Console.version}');
+            Console.info('Air Framework CLI v${await Console.version}');
             break;
           default:
             Console.error('Unknown command: $command');

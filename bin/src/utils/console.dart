@@ -1,45 +1,18 @@
 import 'dart:io';
 
-String getVersion() {
-  final scriptPath = Platform.script.toFilePath();
-  var dir = File(scriptPath).parent;
+import 'package:air_cli/src/utils/asset_resolver.dart';
 
-  for (var i = 0; i < 10; i++) {
-    final pubspec = File('${dir.path}/pubspec.yaml');
-    if (pubspec.existsSync()) {
-      final content = pubspec.readAsStringSync();
+Future<String> getVersion() async {
+  final packageRoot = await AssetResolver.resolvePackageRoot('air_cli');
+  if (packageRoot != null) {
+    final pubspecFile = File('$packageRoot/pubspec.yaml');
+    if (pubspecFile.existsSync()) {
+      final content = await pubspecFile.readAsString();
       final match = RegExp(
         r'^version:\s*(\S+)',
         multiLine: true,
       ).firstMatch(content);
       if (match != null) return match.group(1)!;
-    }
-    final parent = dir.parent;
-    if (parent.path == dir.path) break;
-    dir = parent;
-  }
-
-  final pubCache =
-      Platform.environment['PUB_CACHE'] ??
-      '${Platform.environment['HOME']}/.pub-cache';
-  final parts = scriptPath.split('/');
-  final airCliIndex = parts.indexOf('air_cli');
-  if (airCliIndex > 0) {
-    final versionMatch = RegExp(
-      r'air_cli-\d+\.\d+\.\d+',
-    ).firstMatch(parts.sublist(airCliIndex - 1).join('/'));
-    if (versionMatch != null) {
-      final pubspec = File(
-        '$pubCache/hosted/pub.dev/${versionMatch.group(0)}/pubspec.yaml',
-      );
-      if (pubspec.existsSync()) {
-        final content = pubspec.readAsStringSync();
-        final match = RegExp(
-          r'^version:\s*(\S+)',
-          multiLine: true,
-        ).firstMatch(content);
-        if (match != null) return match.group(1)!;
-      }
     }
   }
 
@@ -48,7 +21,7 @@ String getVersion() {
 
 /// Console utilities for CLI output
 class Console {
-  static String get version => getVersion();
+  static Future<String> get version => getVersion();
 
   static const String reset = '\x1B[0m';
   static const String bold = '\x1B[1m';

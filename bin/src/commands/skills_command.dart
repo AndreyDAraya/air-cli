@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import '../utils/console.dart';
 import '../utils/file_utils.dart';
+import 'package:air_cli/src/utils/asset_resolver.dart';
 
 /// Skills command - manages agent skills for the Air Framework.
 ///
@@ -93,7 +94,7 @@ ${Console.blue}Examples:${Console.reset}
     }
 
     // 2. Locate the bundled skill assets
-    final skillSource = _resolveSkillSourceDir();
+    final skillSource = await AssetResolver.resolve('air_cli');
     if (skillSource == null || !Directory(skillSource).existsSync()) {
       Console.error(
         'Could not locate bundled skill assets.\n'
@@ -184,44 +185,6 @@ ${Console.blue}Examples:${Console.reset}
     }
   }
 
-  /// Resolves the path to the bundled skill assets.
-  ///
-  /// Strategy (in order):
-  ///   1. Next to the script when running with `dart run bin/air.dart` (dev mode)
-  ///   2. Relative to `Platform.script` in pub global snapshots
-  String? _resolveSkillSourceDir() {
-    final scriptUri = Platform.script;
-
-    // The assets folder is always at <package-root>/assets/skills/air_framework
-    // We walk up from the script location to find the package root.
-    // In dev: script = .../air-cli/bin/air.dart  → up 2 = air-cli/
-    // In pub global: script = .../snapshots/air.dart.snapshot → check parent dirs
-
-    Directory? scriptDir = File.fromUri(scriptUri).parent;
-    for (var i = 0; i < 5; i++) {
-      final candidate = path.join(
-        scriptDir!.path,
-        'assets',
-        'skills',
-        'air_framework',
-      );
-      if (Directory(candidate).existsSync()) return candidate;
-      if (scriptDir.parent.path == scriptDir.path) break; // filesystem root
-      scriptDir = scriptDir.parent;
-    }
-
-    // Fallback: check next to the executable name resolved from PATH
-    final execDir = File(Platform.resolvedExecutable).parent;
-    final execCandidate = path.join(
-      execDir.path,
-      'assets',
-      'skills',
-      'air_framework',
-    );
-    if (Directory(execCandidate).existsSync()) return execCandidate;
-
-    return null;
-  }
 }
 
 class AgentInfo {
