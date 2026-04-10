@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 1.0.8
+
+### Bug Fixes
+
+- **`air version`**: Fixed `PathNotFoundException` when running the command globally after installation.
+
 ## 1.0.7
 
 ### New Features
