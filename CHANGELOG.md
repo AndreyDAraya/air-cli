@@ -1,11 +1,14 @@
 # Changelog
 
 
-## 1.0.8
+## 1.0.9
 
 ### Bug Fixes
 
-- **`air version`**: Fixed `PathNotFoundException` when running the command globally after installation.
+- **`air skills install`**: Fixed asset resolution when running as a globally installed package using `Isolate.resolvePackageUri`.
+- **`air version`**: Robust version detection in production environments using the new `AssetResolver` logic.
+
+## 1.0.8
 
 ## 1.0.7
 
