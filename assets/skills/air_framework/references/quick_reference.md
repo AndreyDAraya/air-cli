@@ -35,7 +35,7 @@ EventBus().onSignal('key', (data) => ...);
 
 // Reactive State
 AirView((context) => Text(Flows.count.value));
-Pulses.increment.pulse(null);
+Pulses.increment(null);
 ```
 
 ## Folder Structure

@@ -14,7 +14,7 @@
 ### 2. Unidirectional Data Flow
 ```
 User Action
-  → Pulse (e.g. ProductPulses.fetchProducts.pulse(null))
+  → Pulse (e.g. ProductPulses.fetchProducts(null))
     → State Method (e.g. fetchProducts())
       → Flow Update (e.g. items = newItems)
         → UI Rebuild (AirView detects change)

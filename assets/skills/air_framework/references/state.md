@@ -73,7 +73,7 @@ dart run build_runner build --delete-conflicting-outputs
 After generation `@GenerateState('counter')` produces:
 - `_CounterState` — base class with reactive setters
 - `CounterFlows` — static accessors: `CounterFlows.count` → `AirController<int>`
-- `CounterPulses` — static dispatchers: `CounterPulses.increment.pulse(null)`
+- `CounterPulses` — static dispatchers: `CounterPulses.increment(null)`
 
 Naming rule: `FeatureFlows.<fieldWithoutUnderscore>`, `FeaturePulses.<methodName>`.
 
@@ -89,7 +89,7 @@ AirView((context) {
   return Column(children: [
     Text('Count: ${CounterFlows.count.value}'),
     ElevatedButton(
-      onPressed: () => CounterPulses.increment.pulse(null),
+      onPressed: () => CounterPulses.increment(null),
       child: const Text('+'),
     ),
   ]);

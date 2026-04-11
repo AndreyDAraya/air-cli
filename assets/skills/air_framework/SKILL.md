@@ -147,7 +147,7 @@ class ProductsPage extends StatelessWidget {
         );
       }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => ProductPulses.fetchProducts.pulse(null),
+        onPressed: () => ProductPulses.fetchProducts(null),
         child: const Icon(Icons.refresh),
       ),
     );

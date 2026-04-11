@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 1.0.11
+
+### Improvements
+
+- **Skill Documentation**: Updated all `air_framework` skill references and examples to use the new `AirPulse` callable shorthand syntax (e.g., `CounterPulses.increment(null)` instead of `CounterPulses.increment.pulse(null)`).
+
 ## 1.0.10
 
 ### Improvements
