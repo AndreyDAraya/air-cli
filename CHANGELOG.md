@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 1.0.10
+
+### Improvements
+
+- **Skill Enhancement**: Updated the `air_framework` AI agent skill (`SKILL.md`) to include documentation and examples for the new `AirListener` widget. This teaches AI agents to correctly separate one-off side effects from UI building.
+
 ## 1.0.9
 
 ### Bug Fixes

@@ -155,6 +155,29 @@ class ProductsPage extends StatelessWidget {
 }
 ```
 
+#### Handling One-Off Side Effects (AirListener)
+
+Never put navigation, dialogs, or SnackBars inside `AirView` builders. Use `AirListener` to react to state changes cleanly without rebuilding the UI:
+
+```dart
+class ProductsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AirListener(
+      listen: [ProductFlows.error],
+      listener: (context) {
+        if (ProductFlows.error.value != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(ProductFlows.error.value!))
+          );
+        }
+      },
+      child: Scaffold(...), // your UI with AirView inside
+    );
+  }
+}
+```
+
 ### Step 5 — Register Adapters & Modules in main.dart
 
 ```dart
@@ -199,7 +222,8 @@ class MyApp extends StatelessWidget {
 5. **Data flows down, actions flow up.** State → UI via Flows. UI → State via Pulses.
 6. **One module per feature.** Modules are the unit of encapsulation.
 7. **Use `AirView` for reactive UI.** Wrap any widget that reads state in `AirView` to get automatic rebuilds.
-8. **Run build_runner after changing state.** Any change to `@GenerateState` classes requires regenerating code.
+8. **Use `AirListener` for side-effects.** Never put side-effects (navigation, dialogs, SnackBars) inside `AirView` build methods. Use `AirListener` to react to state changes statelessly without triggering layout rebuilds.
+9. **Run build_runner after changing state.** Any change to `@GenerateState` classes requires regenerating code.
 
 ---
 
